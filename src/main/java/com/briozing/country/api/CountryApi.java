@@ -23,15 +23,22 @@ public class CountryApi {
 
     @PostMapping(value="/add",consumes = MediaType.APPLICATION_JSON_VALUE,produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CountryResponseVO> addCountry(@RequestBody CountryRequestVO countryRequestVO){
-        CountryResponseVO countryResponseVO= countryService.addCountry(countryRequestVO.getName());
+        CountryResponseVO countryResponseVO= countryService.addCountry(countryRequestVO);
         return new ResponseEntity<>(countryResponseVO, HttpStatus.OK);
     }
 
     @GetMapping(value="/findByName/{countryName}",produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<CountryResponseVO> findByName(@PathVariable String countryName){
         System.out.println("Country Name : " + countryName);
-        CountryResponseVO countryResponseVO= countryService.findCountryByName(countryName);
-        return new ResponseEntity<>(countryResponseVO, HttpStatus.OK);
+        HttpStatus status=HttpStatus.OK;
+        CountryResponseVO countryResponseVO=null;
+        try {
+            countryResponseVO = countryService.findCountryByName(countryName);
+        }catch(Exception e){
+            status= HttpStatus.NOT_FOUND;
+            countryResponseVO=null;
+        }
+        return new ResponseEntity<>(countryResponseVO, status);
     }
 
     @GetMapping(value="/findById/{id}",produces = MediaType.APPLICATION_JSON_VALUE)

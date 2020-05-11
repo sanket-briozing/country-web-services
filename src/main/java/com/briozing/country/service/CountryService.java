@@ -4,10 +4,12 @@ import com.briozing.country.models.CountryRequestVO;
 import com.briozing.country.models.CountryResponseVO;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Service;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -15,21 +17,39 @@ import java.util.Map;
 public class CountryService {
 
     private final JdbcTemplate jdbcTemplate;
+    private SimpleJdbcInsert simpleJdbcInsert;
+    private DataSource dataSource;
 
     @Autowired
     public CountryService(DataSource dataSource){
         jdbcTemplate=new JdbcTemplate(dataSource);
+        this.dataSource=dataSource;
     }
 
-    public CountryResponseVO addCountry(String name){
-        int id = jdbcTemplate.update("insert into country_details (name) values('"+name+"')");
-        CountryResponseVO countryResponseVO=new CountryResponseVO();
-        countryResponseVO.setName(name);
+    public CountryResponseVO addCountry(CountryRequestVO countryRequestVO){
+//        int id = jdbcTemplate.update("insert into country (name) values('"+name+"')");
+//        CountryResponseVO countryResponseVO=new CountryResponseVO();
+//        countryResponseVO.setName(name);
+//        return countryResponseVO;
+
+        simpleJdbcInsert=new SimpleJdbcInsert(dataSource)
+                .withTableName("country")
+                .usingGeneratedKeyColumns("id");
+
+        Map<String,String> requestMap= new HashMap<>();
+        requestMap.put("name",countryRequestVO.getName());
+
+        Number id=simpleJdbcInsert.executeAndReturnKey(requestMap);
+        System.out.println("New record id is :- "+id);
+        CountryResponseVO countryResponseVO = new CountryResponseVO();
+        countryResponseVO.setId(id.longValue());
+        countryResponseVO.setName(countryRequestVO.getName());
+        System.out.println(countryRequestVO);
         return countryResponseVO;
     }
 
     public CountryResponseVO findCountryByName(String name){
-        String query ="select id, name from country_details where name = '"+name+"'";
+        String query ="select id, name from country where name = '"+name+"'";
         System.out.println("Query : " + query);
 //        CountryResponseVO countryResponseVO=jdbcTemplate.queryForObject(query, CountryResponseVO.class);
         Map<String, Object> resultMap = jdbcTemplate.queryForMap(query);
@@ -41,7 +61,7 @@ public class CountryService {
     }
 
     public CountryResponseVO findCountryById(String id){
-        String query ="select id, name from country_details where id = '"+id+"'";
+        String query ="select id, name from country where id = '"+id+"'";
         System.out.println("Query : " + query);
 //        CountryResponseVO countryResponseVO=jdbcTemplate.queryForObject(query, CountryResponseVO.class);
         Map<String, Object> resultMap = jdbcTemplate.queryForMap(query);
@@ -53,7 +73,7 @@ public class CountryService {
     }
 
     public CountryResponseVO update(String id, CountryRequestVO countryRequestVO){
-        String query="UPDATE country_details SET name='"+countryRequestVO.getName()+"' WHERE id='"+id+"'";
+        String query="UPDATE country SET name='"+countryRequestVO.getName()+"' WHERE id='"+id+"'";
         System.out.println("UPDATE Query :- " + query);
         int updatedId = jdbcTemplate.update(query);
         CountryResponseVO countryResponseVO=null;
@@ -67,14 +87,14 @@ public class CountryService {
     }
 
     public int delete(String id){
-        String query="DELETE from country_details WHERE id=?";
+        String query="DELETE from country WHERE id=?";
         System.out.println("DELETE Query :- " + query);
         int deletedId = jdbcTemplate.update(query,id);
         return deletedId;
     }
 
     public List<CountryResponseVO> getAllCountries(){
-        String query="SELECT * from country_details";
+        String query="SELECT * from country";
         System.out.println("Query :- " + query);
         List<Map<String, Object>> resultSet = jdbcTemplate.queryForList(query);
         List<CountryResponseVO> countryResponseVO = new ArrayList<CountryResponseVO>();
@@ -93,7 +113,7 @@ public class CountryService {
 
 
     public List<CountryResponseVO> findAllCountries(){
-        String query="SELECT * from country_details";
+        String query="SELECT * from country";
         System.out.println("Query :- " + query);
         return jdbcTemplate.query(query, (rs, rowNum) -> new CountryResponseVO(rs.getLong("id"), rs.getString("name")));
     }
