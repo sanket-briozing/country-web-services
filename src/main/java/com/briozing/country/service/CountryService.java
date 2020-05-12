@@ -3,6 +3,7 @@ package com.briozing.country.service;
 import com.briozing.country.models.CountryRequestVO;
 import com.briozing.country.models.CountryResponseVO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Service;
@@ -31,20 +32,23 @@ public class CountryService {
 //        CountryResponseVO countryResponseVO=new CountryResponseVO();
 //        countryResponseVO.setName(name);
 //        return countryResponseVO;
+//        CountryResponseVO countryResponseVO;
+//        countryResponseVO= findCountryByName(countryRequestVO.getName());
+//        if(countryResponseVO == null) {
+            simpleJdbcInsert = new SimpleJdbcInsert(dataSource)
+                    .withTableName("country")
+                    .usingGeneratedKeyColumns("id");
 
-        simpleJdbcInsert=new SimpleJdbcInsert(dataSource)
-                .withTableName("country")
-                .usingGeneratedKeyColumns("id");
+            Map<String, String> requestMap = new HashMap<>();
+            requestMap.put("name", countryRequestVO.getName());
 
-        Map<String,String> requestMap= new HashMap<>();
-        requestMap.put("name",countryRequestVO.getName());
-
-        Number id=simpleJdbcInsert.executeAndReturnKey(requestMap);
-        System.out.println("New record id is :- "+id);
-        CountryResponseVO countryResponseVO = new CountryResponseVO();
-        countryResponseVO.setId(id.longValue());
-        countryResponseVO.setName(countryRequestVO.getName());
-        System.out.println(countryRequestVO);
+            Number id = simpleJdbcInsert.executeAndReturnKey(requestMap);
+            System.out.println("New record id is :- " + id);
+            CountryResponseVO countryResponseVO = new CountryResponseVO();
+            countryResponseVO.setId(id.longValue());
+            countryResponseVO.setName(countryRequestVO.getName());
+            System.out.println(countryRequestVO);
+//        }
         return countryResponseVO;
     }
 
@@ -53,6 +57,7 @@ public class CountryService {
         System.out.println("Query : " + query);
 //        CountryResponseVO countryResponseVO=jdbcTemplate.queryForObject(query, CountryResponseVO.class);
         Map<String, Object> resultMap = jdbcTemplate.queryForMap(query);
+//        System.out.println("MapSize : " + resultMap.size());
         CountryResponseVO countryResponseVO = new CountryResponseVO();
         countryResponseVO.setName(resultMap.get("name").toString());
         countryResponseVO.setId(Long.parseLong((String.valueOf(resultMap.get("id").toString()))));
